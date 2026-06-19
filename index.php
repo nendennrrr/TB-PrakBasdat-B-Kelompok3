@@ -894,3 +894,4 @@ $query_list_ulasan = mysqli_query($koneksi, "
     </script>
 </body>
 </html>
+// Note: Pastikan untuk menyesuaikan nilai increment dan kecepatan animasi counter sesuai dengan kebutuhan dan jumlah target yang ingin ditampilkan.
