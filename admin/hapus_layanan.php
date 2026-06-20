@@ -13,26 +13,31 @@ if ($id <= 0) {
     exit;
 }
 
-/* =========================
-   CEK DATA
-========================= */
-$cek = mysqli_query($koneksi, "SELECT * FROM layanan WHERE id_layanan=$id");
+// Mulai transaksi untuk memastikan keamanan data
+mysqli_begin_transaction($koneksi);
 
-if (mysqli_num_rows($cek) == 0) {
-    $_SESSION['error'] = "Data layanan tidak ditemukan!";
-    header("Location: layanan.php");
-    exit;
-}
+try {
+    // 1. Hapus data di tabel anak (detail_pesanan) terlebih dahulu
+    // Ini menyelesaikan masalah "foreign key constraint fails"
+    $query1 = "DELETE FROM detail_pesanan WHERE id_layanan = $id";
+    if (!mysqli_query($koneksi, $query1)) {
+        throw new Exception("Gagal menghapus relasi detail pesanan.");
+    }
 
-/* =========================
-   HAPUS DATA
-========================= */
-$hapus = mysqli_query($koneksi, "DELETE FROM layanan WHERE id_layanan=$id");
+    // 2. Hapus data di tabel utama (layanan)
+    $query2 = "DELETE FROM layanan WHERE id_layanan = $id";
+    if (!mysqli_query($koneksi, $query2)) {
+        throw new Exception("Gagal menghapus layanan.");
+    }
 
-if ($hapus) {
-    $_SESSION['success'] = "Data layanan berhasil dihapus!";
-} else {
-    $_SESSION['error'] = "Gagal menghapus data layanan!";
+    // Jika semua berhasil, simpan perubahan
+    mysqli_commit($koneksi);
+    $_SESSION['success'] = "Data layanan dan riwayat pesanan terkait berhasil dihapus!";
+
+} catch (Exception $e) {
+    // Jika ada yang error, batalkan semua perubahan
+    mysqli_rollback($koneksi);
+    $_SESSION['error'] = $e->getMessage();
 }
 
 header("Location: layanan.php");
